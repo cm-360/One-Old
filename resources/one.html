@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+
+    <title>One: A Web-Based Uno Clone</title>
+    <style>
+        html,
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden;
+            background: #001144;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+			width: 100%;
+            height: 100%;
+			display: none;
+            background: #0000007F;
+        }
+
+        .overlay_box {
+			position: absolute;
+            top: 50%;
+            left: 50%;
+			transform: translate(-50%, -50%);
+			/* https://www.w3schools.com/cssref/css3_pr_transform.asp */
+			margin: 0;
+            border-radius: 15px;
+            display: block;
+			overflow: auto;
+            background: #444455;
+        }
+
+        #login_form {
+            padding: 15px;
+            color: white;
+        }
+
+		.login_form_section {
+			padding: 5px;
+		}
+
+        .login_heading {
+			margin-bottom: 8px;
+            font: 40px arial;
+            text-align: center;
+        }
+
+        .login_field {
+			margin-bottom: 5px;
+			display: block;
+			overflow: auto;
+			font: 18px arial;
+        }
+
+		#color_form {
+			width: 500px;
+			margin: 15px;
+			overflow: hidden;
+			text-align: center;
+		}
+		
+		#color_heading {
+			font: 35px arial;
+			color: white;
+			text-align: center;
+		}
+
+		.color_button {
+			width: calc(50% - 12px);
+			margin: 5px;
+			padding-top: 60px;
+			padding-bottom: 60px;
+			border-radius: 15px;
+			font: 50px arial;
+			color: white;
+			text-align: center;
+		}
+		
+		#hud_status {
+			position: fixed;
+			top: 0;
+			left: 0;
+			margin: 10px;
+			padding: 10px;
+			border-radius: 10px;
+			display: none;
+			font: 15px arial;
+			color: white;
+			background: #000000BF;
+		}
+		
+		#hud_skip {
+			position: fixed;
+			top: calc(100% - 60px);
+			left: calc(50% - 80px);
+			padding: 10px;
+			border-radius: 10px;
+			display: none;
+			background: #000000BF;
+		}
+		
+		.skip_button {
+			font: 25px arial;
+			width: 140px;
+		}
+		
+		#card_svgs {
+			display: none;
+		}
+    </style>
+
+	<script src="/resource/forge-sha256.min.js"></script>
+
+    <!--
+		<script defer src="/resource/rgbcolor.min.js"></script>
+	    <script defer src="/resource/stackblur.min.js"></script>
+		<script defer src="/resource/canvg.js"></script>
+		
+		https://codeburst.io/creating-and-drawing-on-an-html5-canvas-using-javascript-93da75f001c1
+		https://beautifier.io/
+		https://stackoverflow.com/questions/24384368/simple-button-in-html5-canvas
+	-->
+</head>
+
+<body>
+    <canvas id="oneGameCanvas"></canvas>
+    <div id="card_svgs">
+    	<div class="card_svg_div">
+    		<p>Reverse</p>
+    		<!-- Reverse symbol: https://www.onlinewebfonts.com/icon/72291 -->
+			<svg version="1.1"
+			    xmlns="http://www.w3.org/2000/svg"
+			    xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1000px" height="1000px" viewBox="0 0 1000 1000" enable-background="new 0 0 1000 1000" xml:space="preserve">
+			    <metadata> Svg Vector Icons : http://www.onlinewebfonts.com/icon </metadata>
+			    <path style="fill: #000000" d="M980,438.8h-56C894.2,231.2,716.2,71.5,500.3,71.5c-166.8,0-310.9,95.5-381.8,234.6l115,44.2C286,257,385.7,193.9,500.4,193.9c148.1,0,271.6,105.2,299.9,244.9h-73.8c-9.5,9.2-18.5,14.9-5,30.8l114.2,116.1c9.5,9.2,24.8,9.2,34.2,0l115-116.1C994.4,460.4,989.4,448,980,438.8z M500.3,806.1c-137,0-253-90.1-292-214.2h67c9.5-9.2,14.4-21.6,5-30.8L165.3,444.9c-9.5-9.2-24.8-9.2-34.2,0L16.9,561c-13.6,15.9-4.5,21.6,5,30.8H78c33.2,181.6,209.4,336.7,422.4,336.7c155.9,0,291.9-83.5,366.9-208l-115.8-45.7C696.1,754.1,604.3,806.1,500.3,806.1z"/>
+			</svg>
+    	</div>
+    	<div class="card_svg_div">
+    		<p>Skip</p>
+    		<!-- Skip symbol: https://www.onlinewebfonts.com/icon/566996 -->
+			<svg version="1.1"
+			    xmlns="http://www.w3.org/2000/svg"
+			    xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1000px" height="1000px" viewBox="0 0 1000 1000" enable-background="new 0 0 1000 1000" xml:space="preserve">
+			    <metadata> Svg Vector Icons : http://www.onlinewebfonts.com/icon </metadata>
+			    <g transform="translate(0.000000,511.000000) scale(0.100000,-0.100000)">
+			        <path style="fill: #000000" d="M4509.6,4987.3C3405.7,4880,2332.5,4368.9,1535.2,3574.2C53.1,2089.6-322.5-166.8,602.5-2050c582.6-1185.7,1599.6-2072.4,2851.7-2488.9c1009.3-334.7,2082.6-334.7,3091.9,0c2568.1,853.5,3955.6,3626,3102.2,6194.1c-416.5,1252.1-1303.2,2269.1-2488.9,2851.7C6336.6,4910.7,5424.4,5074.2,4509.6,4987.3z M5695.3,4174.7c385.8-66.4,784.5-199.3,1157.6-385.9c314.3-155.9,787-475.3,799.8-539.2c2.6-20.4-1293-1333.9-2882.4-2923.3C2442.3-2001.5,1875.1-2556,1844.4-2535.5c-84.3,53.7-378.2,498.3-523.8,792.1c-189.1,378.2-319.4,774.3-388.4,1175.4c-43.4,263.2-48.5,378.2-38.3,792.1c20.4,700.2,125.2,1132,426.7,1737.6c201.9,403.7,437,730.8,766.6,1060.5c626.1,626.1,1413.1,1027.2,2287,1162.7C4703.8,4238.6,5355.4,4230.9,5695.3,4174.7z M8386,2467.8c288.7-408.9,562.2-1050.2,669.5-1584.3c63.9-322,63.9-1226.6,0-1548.5c-337.3-1666.1-1615-2941.2-3281-3281.1c-347.5-71.5-1257.2-63.9-1599.6,12.8c-539.2,120.1-1027.2,324.5-1454,608.1c-135.4,89.5-255.5,176.3-265.7,191.7c-15.3,28.1,5729,5798,5769.9,5798C8235.2,2664.5,8306.8,2575.1,8386,2467.8z"/>
+			    </g>
+			</svg>
+    	</div>
+    </div>
+
+    <div class="overlay">
+        <div class="overlay_box" id="overlay_login">
+            <form id="login_form">
+                <div class="login_heading">
+                    <text>Play One</text>
+                </div>
+				<div>
+					<div class="login_form_section">
+						<label class="login_field" for="login_username">Username:</label>
+						<input class="login_field" id="login_username" type="text">
+						<label class="login_field" for="login_password">Password:</label>
+						<input class="login_field" id="login_password" type="password">
+					</div>
+					<div class="login_form_section">
+						<label class="login_field" for="login_gameid">Game ID:</label>
+						<input class="login_field" id="login_gameid" type="text" style="width: 90px; margin-right: 5px; display: inline">
+						<input class="login_field" type="submit" value="Join" style="width: 70px; display: inline">
+					</div>
+				</div>
+            </form>
+        </div>
+	</div>
+	<div class="overlay">
+		<div class="overlay_box" id="overlay_color">
+			<div id="color_form">
+				<text id="color_heading">Choose Color</text><br><br>
+				<button class="color_button" style="background: #dd0000" onclick="actionSetColor('red')">Red</button>
+				<button class="color_button" style="background: #ffcc00" onclick="actionSetColor('yellow')">Yellow</button>
+				<button class="color_button" style="background: #008800" onclick="actionSetColor('green')">Green</button>
+				<button class="color_button" style="background: #0000aa" onclick="actionSetColor('blue')">Blue</button>
+			</div>
+		</div>
+	</div>
+	
+	<div id="hud_status">
+		<text>Username: </text><text id="hud_status_username"></text><br>
+		<text>Game ID: </text><text id="hud_status_gameid"></text><br>
+	</div>
+	<div id="hud_skip">
+		<button class="skip_button" onclick="actionSetColor()">Skip Turn</button>
+	</div>
+
+    <script>
+        ;
+        (function() {
+            // Global variables
+            let canvas, ctx;
+			let cardIcons = {};
+			let cardIconTemplates = {};
+			let mousePos = {x:0, y:0}, mouseDown = false;
+			let hoveredCardsGlobal, clickedCardGlobal;
+			
+			let socket;
+			let gameid, username, auth_token;
+			
+			let locGame;
+
+            // Initialize when document is finished loading
+            function init() {
+                // Get canvas object and graphics context
+                canvas = document.getElementById("oneGameCanvas");
+                ctx = canvas.getContext("2d");
+                // Set canvas dimensions
+                resizeCanvas()
+
+				// Register mouse listeners
+				canvas.addEventListener("mousemove", function(event) {
+					let rect = canvas.getBoundingClientRect();
+					mousePos = {
+						x: event.clientX - rect.left,
+						y: event.clientY - rect.top
+					}
+				});
+				canvas.addEventListener("mousedown", function(event) {
+					mouseDown = true;
+				});
+
+                // Show login overlay
+                let overlay_login = document.getElementById("overlay_login");
+                overlay_login.parentElement.style.display = "block";
+                // Read login form on submission
+                let login_form = document.getElementById("login_form");
+                login_form.addEventListener("submit", function(event) {
+                    // Prevent actual submission
+                    event.preventDefault();
+                    // Get contents of fields
+                    username = login_form.elements["login_username"].value.trim();
+					let password = login_form.elements["login_password"].value.trim();
+                    gameid = login_form.elements["login_gameid"].value.trim();
+                    // Check username
+                    if (/^[\w\.-]{1,20}$/.test(username)) {
+                        // Check game ID
+                        if (/^[a-zA-Z\d]{8}$/.test(gameid)) {
+                            // Attempt to login user
+                            getJsonAsync("/api/auth/login?username=" + username + "&hash=" + forge_sha256(password), function(response) {
+								if (response.status === "ok") {
+									// Save auth token
+									auth_token = response.login.token;
+									CookieHelper.setCookie("auth_token", auth_token, 30);
+									// Retreive game data
+									getJsonAsync("/api/game/get?token=" + auth_token + "&gameid=" + gameid, function (response) {
+										if (response.status === "ok") {
+											// Hide login overlay
+                            				overlay_login.parentElement.style.display = "none";
+											// Start game
+											start();
+										} else {
+											window.alert("Join failed! Reason: " + response.reason)
+										}
+									});
+								} else {
+									window.alert("Login failed! Reason: " + response.reason);
+								}
+			                });
+                        } else {
+                            window.alert("Invalid game ID! It should be an 8-character alphanumeric code.");
+                            return;
+                        }
+                    } else {
+                        window.alert("Invalid username! Usernames must be 1-20 characters long and contain no special characters.");
+                        return;
+                    }
+                });
+				// Check for login token cookie
+				/*
+				let auth_token = CookieHelper.getCookie("auth_token");
+				if (auth_token.length !== 0) {
+					getJsonAsync("/api/auth/lookup?token=" + auth_token, function (response) {
+						if (response.status === "ok") {
+							// Autofill login fields
+							login_form.elements["login_username"].value = response.login.username;
+							login_form.elements["login_password"].value = auth_token;
+						} else {
+							// Erase invalid token cookie
+							CookieHelper.setCookie("auth_token", "", -1);
+						}
+					});
+				}
+				*/
+				
+				// Load card images
+				document.getElementById("card_svgs").querySelectorAll(".card_svg_div").forEach((card_svg_div) => {
+					let iconName = card_svg_div.querySelector("p").innerText;
+					cardIconTemplates[iconName] = "data:image/svg+xml;charset=utf-8," + (new XMLSerializer).serializeToString(card_svg_div.querySelector("svg"));
+				});
+				/*
+				let iconNames = ["reverse", "skip"];
+				iconNames.forEach(function(iconName) {
+					let cardIcon = new Image();
+					cardIcon.onload = function() {
+						cardIcons[iconName] = cardIcon;
+						console.log(cardIcon);
+					}
+					cardIcon.src = "resource/icons/" + iconName + ".svg"
+				});*/
+
+				let perimeter = canvas.width + (canvas.height * 2);
+				let widthPercent = canvas.width / perimeter,
+					heightPercent = canvas.height / perimeter;
+				let players = 5;
+				let playersTop = Math.round(widthPercent * players);
+				let playersSide = Math.round(heightPercent * players);
+				console.log("Top: " + playersTop, "Side: " + playersSide);
+                //window.setInterval(tick, 500);
+            }
+            document.addEventListener("DOMContentLoaded", init);
+
+			function start() {
+				// Show status HUD
+                document.getElementById("hud_status").style.display = "block";
+				document.getElementById("hud_status_username").innerText = username;
+				document.getElementById("hud_status_gameid").innerText = gameid;
+				
+				// Create game object
+				locGame = new OneGame();
+				
+				// Function to set color from overlay
+				actionSetColor = function(color) {
+					socket.send("game/action\n\ntoken=" + auth_token + "\ngameid=" + gameid + "\naction=color\naction_color=" + color);
+					document.getElementById("overlay_color").parentElement.style.display = "none";
+				}
+				actionSkipTurn = function() {
+					socket.send("game/action\n\ntoken=" + auth_token + "\ngameid=" + gameid + "\naction=skip");
+					document.getElementById("hud_skip").style.display = "none";
+				}
+				
+                // WebSocket for client to server comms
+                socket = new WebSocket("ws://" + location.hostname + ":11111");
+                socket.onopen = function() {
+                    socket.send("game/get\n\ntoken=" + auth_token + "\ngameid=" + gameid);
+                };
+				socket.onmessage = function(event) {
+					let data = JSON.parse(event.data);
+					console.log(data);
+					if (data.status === "ok") {
+						if (data.game !== undefined)
+							locGame.loadData(data);
+					} else {
+						window.alert("Error: " + data.reason);
+					}
+				};
+				socket.onclose = function(event) {
+					let message = " Please reload the page.";
+					// Clean or dirty close
+					if (event.wasClean)
+						message = "The server has disconnected you." + message;
+					else
+						message = "Uh oh! The connection to the server was dropped." + message;
+					// Reason, if any
+					if (event.reason.length > 0)
+						message += "\nReason: " + event.reason;
+					// Event code
+					message += "\n\nEvent code: " + event.code;
+					// Show alert
+					window.alert(message);
+				};
+				socket.onerror = function(error) {
+					console.log("Error: " + error.message);
+				};
+				
+				// Start rendering
+				window.requestAnimationFrame(draw);
+			}
+
+            // Resize the canvas to fill the window
+            function resizeCanvas() {
+                // Set canvas dimensions
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+			// Resize canvas with window
+			function windowResized() {
+				resizeCanvas();
+				window.setTimeout(resizeCanvas, 50);
+			}
+            window.addEventListener("resize", windowResized, true);
+
+            // Draw game
+            function draw() {
+				// Clear canvas
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				
+				
+				// Canvas cross-length line
+				/*
+                ctx.strokeStyle = "magenta";
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(canvas.width, canvas.height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height);
+                ctx.lineTo(canvas.width, 0);
+                ctx.stroke();
+				*/
+
+
+				// Card size variables
+				// OLD: let cardWidth = Math.max(canvas.width, canvas.height) / 12
+				let cardWidth = Math.max(canvas.width / 16, canvas.height / 9) * 0.8, cardHeight = cardWidth * 1.5;
+				let handWidth = Math.min(canvas.width, canvas.height) * 0.8;
+				
+				// Card interaction variables
+				let hoveredCards = [], clickedCard = false;
+
+				// Draw discard pile
+				for (let i = Math.max(0, locGame.discardPile.length - 5); i < locGame.discardPile.length; i++) {
+					locGame.discardPile[i].draw(ctx, (canvas.width * 0.5) - (cardWidth * 1.1), (canvas.height * 0.5) - (cardWidth * 0.75) - ((i - Math.max(0, locGame.discardPile.length - 5)) * (cardWidth * 0.02)), cardWidth, cardWidth * 1.5)
+				}
+				// Reset card interaction data
+				hoveredCardsGlobal = [];
+				clickedCardGlobal = false;
+				// Draw draw pile
+				for (let i = Math.min(4, locGame.drawPile.length - 1); i >= 0; i--) {
+					locGame.drawPile[i].draw(ctx, (canvas.width * 0.5) + (cardWidth * 0.1), (canvas.height * 0.5) - (cardWidth * 0.75) - ((Math.min(locGame.drawPile.length, 4) - i) * (cardWidth * 0.02)), cardWidth, cardWidth * 1.5)
+				}
+				// Queue interactions
+				hoveredCards = hoveredCardsGlobal.concat(hoveredCards);
+				clickedCard = clickedCard || clickedCardGlobal;
+				
+				// Get index of self in list to figure out where other hands should be drawn
+				let selfIndex;
+				locGame.players.forEach(function(locPlayer, i) {
+					if (locPlayer.name === username) {
+						selfIndex = i;
+					}
+				});
+				// Draw player's cards
+				locGame.players.forEach(function(locPlayer, i) {
+					if (locPlayer.name === username) {
+						// Reset clicked cards data
+						hoveredCardsGlobal = [];
+						clickedCardGlobal = false;
+						// Draw player's hand (also detects clicks)
+						locPlayer.hand.draw(ctx, canvas.width * 0.5, canvas.height * 0.85, handWidth, 0, cardWidth, cardHeight, 10, locPlayer.hand.cards.length, locPlayer.name, false);
+						// Queue interactions
+						hoveredCards = hoveredCardsGlobal.concat(hoveredCards);
+						clickedCard = clickedCard || clickedCardGlobal;
+					} else {
+						if (locGame.players.length === 2) {
+							// Draw other player's hand on opposite side
+							locPlayer.hand.draw(ctx, canvas.width * 0.5, canvas.height * 0.15, handWidth, Math.PI, cardWidth, cardHeight, 10, locPlayer.hand.cards.length, locPlayer.name, false);
+						} else {
+							
+						}
+					}
+				});
+				
+				// Get top card
+				if (hoveredCards.length > 0) {
+					let card = hoveredCards[0];
+					// Update hover state variable
+					if (!card.hover.state) {
+						card.hover.state = true;
+						card.hover.time = new Date().getTime();
+					}
+					// Check if card clicked
+					if ((locGame.turn === username) && clickedCard) {
+						if (locGame.drawPile.length > 0 && card === locGame.drawPile[0]) {
+							socket.send("game/action\n\ntoken=" + auth_token + "\ngameid=" + gameid + "\naction=draw");
+						} else {
+							locGame.players.forEach(function(player) {
+								if (player.name === username) {
+									let playerCards = player.hand.cards;
+									for (let i = 0; i < playerCards.length; i++)
+										if (playerCards[i] === card)
+											socket.send("game/action\n\ntoken=" + auth_token + "\ngameid=" + gameid + "\naction=play\naction_index=" + i);
+								}
+							});
+						}
+					}
+					// Reset hover state of other cards
+					hoveredCards.forEach(function(otherCard) {
+						if (card !== otherCard)
+							if (otherCard.hover.state) {
+								// Reset hover state
+								otherCard.hover.state = false;
+								otherCard.hover.time = new Date().getTime();
+							}
+					});
+				}
+
+				/*
+                card1.drawFront(ctx, 0, 0, 200, 300);
+                card2.drawFront(ctx, 250, 0, 200, 300);
+                card3.drawFront(ctx, 0, 350, 200, 300);
+                card4.drawFront(ctx, 250, 350, 200, 300);
+				card5.drawBack(ctx, 500, 0, 200, 300);
+				*/
+				// Reset mouse state
+				mouseDown = false;
+				// Next frame
+				window.requestAnimationFrame(draw);
+            }
+
+			class OneGame {
+				constructor() {
+					this.players = [];
+					this.turn = "";
+					this.discardPile = [];
+					this.drawPile = [];
+				}
+
+				loadData(gameData) {
+					// Update turn
+					this.turn = gameData.game.turn;
+					// Update players
+					this.players = [];
+					let skipAllowed = false;
+					let self = this;
+					gameData.game.players.forEach(function(player) {
+						let locCards = [];
+						if (player.hand.cards === undefined) {
+							// Fill in empty cards for other players
+							for (let i = 0; i < player.hand.count; i++)
+								locCards.push(new Card());
+						} else {
+							// Check for username change
+							if (player.username !== username) {
+								username = player.username;
+								window.alert("Username changed to " + username);
+								document.getElementById("hud_status_username").innerText = username;
+							}
+							// Load own cards
+							for (let i = 0; i < player.hand.cards.length; i++) {
+								let cardData = player.hand.cards[i];
+								let card = Card.load(cardData)
+								card.select.available = (self.turn === username) && (player.hand.moves[i]);
+								locCards.push(card);
+							}
+							// Show/hide skip button
+							if (skipAllowed = player.skip_allowed)
+								document.getElementById("hud_skip").style.display = "block";
+							else
+								document.getElementById("hud_skip").style.display = "none";
+						}
+						// Add player to list
+						self.players.push(new Player(player.username, new Hand(locCards)));
+					});
+					// Update piles
+					this.discardPile = [];
+					for (let i = 0; i < gameData.game.discardPile.length; i++) {
+						let cardData = gameData.game.discardPile[i];
+						let card = Card.load(cardData);
+						card.hover.effects = {
+							raise: false,
+							highlight: false
+						};
+						self.discardPile.push(card);
+						// Open color selection overlay if needed
+						if ((i === gameData.game.discardPile.length - 1) && (cardData.color === "black") && (this.turn === username)) {
+							let overlay_color = document.getElementById("overlay_color");
+                			overlay_color.parentElement.style.display = "block";
+						}
+					}
+					this.drawPile = [];
+					for (let i = 0; i < gameData.game.drawPile; i++) {
+						let card = new Card();
+						let topCard = (i === 0) && (self.turn === username);
+						card.hover.effects = {
+							raise: topCard,
+							highlight: topCard
+						};
+						card.select = {
+							available: !skipAllowed,
+							nodarken: skipAllowed
+						}
+						this.drawPile.push(card);
+					}
+					// Update card visuals
+					if (username === this.turn) {
+
+					}
+				}
+			}
+			
+			class Card {
+                constructor(
+                    value = "-1", bgColor = "#330033", fgColor = "#ffffff", flipped = true
+                ) {
+                    this.value = value;
+                    this.bgColor = bgColor;
+                    this.fgColor = fgColor;
+					this.flipped = flipped;
+					this.hover = {
+						state: false,
+						time: 0,
+						effects: {
+							raise: true,
+							highlight: true
+						}
+					}
+					this.select = {
+						state: false,
+						available: true,
+						nodarken: false
+					}
+                }
+
+				static load(cardData) {
+					if (cardData.type === "number") {
+						return new Card(cardData.value.toString(), Card.nameToColor(cardData.color), "#ffffff", false);
+					} else {
+						return new Card(Card.beautifyName(cardData.type), Card.nameToColor(cardData.color), "#ffffff", false);
+					}
+				}
+
+				draw(ctx, x, y, w, h) {
+					if (this.flipped) {
+						this.drawBack(ctx, x, y, w, h);
+					} else {
+						this.drawFront(ctx, x, y, w, h);
+					}
+				}
+
+                drawFront(ctx, x, y, w, h) {
+					let raise = 0;
+					if (this.hover.effects.raise) {
+						raise = h * this.calcHoverRaise();
+						y -= raise;
+					}
+
+                    // Draw card background and slant
+                    this.drawBackground(ctx, x, y, w, h, raise);
+                    this.drawSlant(ctx, x, y, w, h, w * 0.35, w * 0.2);
+
+					// Save canvas style
+                    ctx.save();
+					
+					// Attempt to fetch card icon
+					let cardIcon = Card.getCardIcon(this.value, this.bgColor);
+                    // Draw card symbols
+                    var textSize = (w * (5 / (this.value.length + 5)));
+                    ctx.translate(x + (w * 0.5), y + (h * 0.5));
+                    ctx.textBaseline = "middle";
+                    // Large middle symbol
+                    ctx.fillStyle = GameRenderer.shadeColor(this.bgColor, (this.select.available || this.select.nodarken) ? 1 : 0.5);
+                    ctx.textAlign = "center";
+                    ctx.font = (textSize * 0.7) + "px arial";
+                    ctx.fillText(this.value, 0, 0);
+                    if (cardIcon === undefined)
+                    	;
+                    else
+						;//ctx.drawImage(cardIcon, -(w * 0.3), -(w * 0.3), (w * 0.6), (w * 0.6));
+                    // Corner symbols
+                    ctx.fillStyle = GameRenderer.shadeColor(this.fgColor, (this.select.available || this.select.nodarken) ? 1 : 0.5);
+                    ctx.textAlign = "left";
+                    ctx.font = (textSize * 0.25) + "px arial";
+                    ctx.fillText(this.value, (w * 0.1) - (w * 0.5), (h / 8) - (h * 0.5));
+                    ctx.rotate(Math.PI);
+                    ctx.fillText(this.value, (w * 0.1) - (w * 0.5), (h / 8) - (h * 0.5));
+
+                    // Restore canvas style
+                    ctx.restore();
+                }
+
+                drawBack(ctx, x, y, w, h) {
+					let raise = 0;
+					if (this.hover.effects.raise) {
+						raise = h * this.calcHoverRaise();
+						y -= raise;
+					}
+					
+                    // Draw card background and slant
+                    this.drawBackground(ctx, x, y, w, h, raise);
+                    this.drawSlant(ctx, x, y, w, h, w * 0.5, w * 0.35);
+
+					// Save canvas style
+                    ctx.save();
+
+                    // Draw card numbers
+                    ctx.translate(x + (w * 0.5), y + (h * 0.5));
+                    ctx.textBaseline = "middle";
+                    // Large middle number
+                    ctx.fillStyle = this.bgColor;
+                    ctx.textAlign = "center";
+                    ctx.font = w * 0.4 + "px arial";
+                    ctx.fillText("One", 0, 0);
+
+                    // Restore canvas style
+                    ctx.restore();
+                }
+
+				drawBackground(ctx, x, y, w, h, raiseAmount) {
+					// Save canvas style
+                    ctx.save();
+
+                    let border = w * 0.03;
+                    // Start outside border
+					if (this.select.available) {
+						if (this.hover.effects.highlight && this.hover.state)
+							ctx.fillStyle = "#ffff00"; // Yellow
+						else
+							ctx.fillStyle = this.fgColor;
+					} else {
+						ctx.fillStyle = GameRenderer.shadeColor(this.fgColor, (this.select.available || this.select.nodarken ? 1 : 0.5));
+					}
+                    GameRenderer.drawRoundRectArc(ctx, x, y, w, h, border * 3, true, false);
+
+					// Check if mouse is inside drawing context's path
+					let hovering = ctx.isPointInPath(mousePos.x, mousePos.y) || ctx.isPointInPath(mousePos.x, mousePos.y - raiseAmount);
+					// Check if hovered
+					if (this.select.available && hovering) {
+						// Add to start of hovered cards list
+						hoveredCardsGlobal.unshift(this);
+						// Check if clicked
+						if (mouseDown)
+							clickedCardGlobal = true;
+					} else if (this.hover.state) {
+						// Reset hover state
+						this.hover.state = false;
+						this.hover.time = new Date().getTime();
+					}
+					
+					// Finish drawing border
+					ctx.strokeStyle = GameRenderer.shadeColor(this.bgColor, (this.select.available || this.select.nodarken) ? 1 : 0.5);
+					ctx.lineWidth = border * 0.5;
+					GameRenderer.drawRoundRectArc(ctx, x, y, w, h, border * 3, false, true);
+                    // Inside fill
+                    ctx.fillStyle = GameRenderer.shadeColor(this.bgColor, (this.select.available || this.select.nodarken) ? 1 : 0.5);
+                    GameRenderer.drawRoundRectArc(ctx, x + border, y + border, w - (border * 2), h - (border * 2), border * 2, true, false);
+
+					// Restore canvas style
+                    ctx.restore();
+                }
+
+                drawSlant(ctx, x, y, w, h, a, b) {
+                    // var slantAngle = Math.atan((a - b) / this.w)
+					// Save canvas style
+                    ctx.save();
+
+					let right = x + w, bottom = y + h, border = w * 0.1;
+                    ctx.fillStyle = GameRenderer.shadeColor(this.fgColor, (this.select.available || this.select.nodarken) ? 1 : 0.5);
+                    GameRenderer.drawQuadrilateral(ctx, x + border, y + a, right - border, y + b, right - border, bottom - a, x + border, bottom - b, true, false);
+
+					// Restore canvas style
+                    ctx.restore();
+                }
+
+				calcHoverRaise() {
+					let raiseTime = 100, raiseAmount = 0.1, raisePercent;
+					let hoverTimeDelta = Math.min(raiseTime, new Date().getTime() - this.hover.time);
+					raisePercent = (hoverTimeDelta / raiseTime);
+					if (!this.hover.state)
+						raisePercent = 1 - raisePercent;
+					return raiseAmount * raisePercent;
+				}
+				
+				static getCardIcon(cardName, cardColor) {
+					let cardFullName = cardName + cardColor;
+					if (cardFullName in cardIcons) {
+						return cardIcons[cardFullName];
+					} else if (cardName in cardIconTemplates) {
+						let cardIcon = new Image();
+						cardIcon.src = cardIconTemplates[cardName].replace(/#000000/g, cardColor);
+						cardIcons[cardFullName] = cardIcon;
+						console.log(cardIcon);
+						return cardIcon;
+					} else {
+						return undefined;
+					}
+				}
+				
+				static nameToColor(colorName) {
+					if (colorName === "red")
+						return "#dd0000";
+					else if (colorName === "yellow")
+						return "#ffcc00";
+					else if (colorName === "green")
+						return "#008800";
+					else if (colorName === "blue")
+						return "#0000aa";
+					else
+						return "#330033";
+				}
+				
+				static beautifyName(name) {
+					return Card.titleCase(name.replace("reverse", "rev.").replace("draw_", "+").replace("_", " "));
+				}
+				
+				// Modified from https://www.freecodecamp.org/news/three-ways-to-title-case-a-sentence-in-javascript-676a9175eb27/
+				static titleCase(str) {
+					return str.toLowerCase().split(" ").map(function (word) {
+						return word.replace(word[0], word[0].toUpperCase());
+					}).join(" ");
+				}
+            }
+
+            class Hand {
+                constructor(
+					cards = []
+                ) {
+					this.cards = cards;
+                }
+
+				draw(ctx, x, y, w, angle, cardWidth, cardHeight, fullRow, thisRow, username, isTurn) {
+					this.drawRow(ctx, x, y, w, angle, cardWidth, cardHeight, fullRow, thisRow, username, isTurn);
+				}
+
+                drawRow(ctx, x, y, w, angle, cardWidth, cardHeight, fullRow, thisRow, username, isTurn) {
+					// Save canvas style
+					ctx.save();
+					// Adjust canvas
+					ctx.translate(x, y);
+					ctx.rotate(angle);
+					
+					// Draw each card
+					let spacing = ((w - cardWidth) / (fullRow - 1)), shift = (spacing * (fullRow - thisRow)) * 0.5;
+					this.cards.forEach(function(card, i) {
+						card.draw(ctx, (spacing * i) - (w * 0.5) + shift, -(cardHeight * 0.5), cardWidth, cardHeight);
+					});
+					
+					// Draw username under hand
+                    ctx.textBaseline = "middle";
+                    ctx.fillStyle = "white";
+                    ctx.textAlign = "center";
+                    ctx.font = "16px arial";
+                    ctx.fillText(username, 0, -((cardHeight * 0.5) + 20));
+					
+					// Restore canvas style
+					ctx.restore();
+                }
+            }
+
+			class Player {
+				constructor(
+					name = "Player",
+					hand
+				) {
+					this.name = name;
+					this.hand = hand;
+				}
+			}
+
+            class GameRenderer {
+                /**
+                 * Modified from https://stackoverflow.com/a/3368118
+                 * Draws a rounded rectangle using the current state of the canvas with quadraticCurveTo.
+                 * If you omit the last three params, it will draw a rectangle
+                 * outline with a 5 pixel border radius
+                 * @param {CanvasRenderingContext2D} ctx
+                 * @param {Number} x The top left x coordinate
+                 * @param {Number} y The top left y coordinate
+                 * @param {Number} w The width of the rectangle
+                 * @param {Number} h The height of the rectangle
+                 * @param {Number} [r = 5] The corner radius
+                 * @param {Boolean} [fill = false] Whether to fill the rectangle.
+                 * @param {Boolean} [stroke = true] Whether to stroke the rectangle.
+                 */
+                static drawRoundRectQuad(ctx, x, y, w, h, r, fill, stroke) {
+                    if (typeof stroke === "undefined") {
+                        stroke = true;
+                    }
+                    if (typeof r === "undefined") {
+                        r = 5;
+                    }
+                    ctx.beginPath();
+                    ctx.moveTo(x + r, y);
+                    ctx.lineTo(x + w - r, y);
+                    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                    ctx.lineTo(x + w, y + h - r);
+                    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                    ctx.lineTo(x + r, y + h);
+                    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                    ctx.lineTo(x, y + r);
+                    ctx.quadraticCurveTo(x, y, x + r, y);
+                    ctx.closePath();
+                    if (fill) {
+                        ctx.fill();
+                    }
+                    if (stroke) {
+                        ctx.stroke();
+                    }
+                }
+
+                /**
+                 * Modified from https://stackoverflow.com/a/7838871
+                 * Draws a rounded rectangle using the current state of the canvas with arcTo.
+                 * @param {CanvasRenderingContext2D} ctx
+                 * @param {Number} x The top left x coordinate
+                 * @param {Number} y The top left y coordinate
+                 * @param {Number} w The width of the rectangle
+                 * @param {Number} h The height of the rectangle
+                 * @param {Number} [radius = 5] The corner radius
+                 * @param {Boolean} [fill = false] Whether to fill the rectangle.
+                 * @param {Boolean} [stroke = true] Whether to stroke the rectangle.
+                 */
+                static drawRoundRectArc(ctx, x, y, w, h, r, fill, stroke) {
+                    if (typeof stroke === "undefined") {
+                        stroke = true;
+                    }
+                    if (typeof r === "undefined") {
+                        r = 5;
+                    }
+                    if (w < 2 * r) r = w * 0.5;
+                    if (h < 2 * r) r = h * 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(x + r, y);
+                    ctx.arcTo(x + w, y, x + w, y + h, r);
+                    ctx.arcTo(x + w, y + h, x, y + h, r);
+                    ctx.arcTo(x, y + h, x, y, r);
+                    ctx.arcTo(x, y, x + w, y, r);
+                    ctx.closePath();
+                    if (fill) {
+                        ctx.fill();
+                    }
+                    if (stroke) {
+                        ctx.stroke();
+                    }
+                }
+
+                static drawQuadrilateral(ctx, x1, y1, x2, y2, x3, y3, x4, y4, fill, stroke) {
+                    if (typeof stroke === "undefined") {
+                        stroke = true;
+                    }
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.lineTo(x3, y3);
+                    ctx.lineTo(x4, y4);
+                    ctx.lineTo(x1, y1);
+                    ctx.closePath();
+                    if (fill) {
+                        ctx.fill();
+                    }
+                    if (stroke) {
+                        ctx.stroke();
+                    }
+                }
+
+				// Modified from https://stackoverflow.com/q/5560248
+				static shadeColor(color, percent) {
+					// Detect '#' character and remove before parsing
+					let usePound = false;
+					if (color[0] == "#") {
+						color = color.slice(1);
+						usePound = true;
+					}
+					// Parse 
+					let num = parseInt(color, 16);
+					// Apply to red
+					let r = (num >> 16) * percent;
+					if (r > 255)
+						r = 255;
+					else if (r < 0)
+						r = 0;
+					// Apply to blue
+					let b = ((num >> 8) & 0x00FF) * percent;
+					if (b > 255)
+						b = 255;
+					else if (b < 0)
+						b = 0;
+					// Apply to green
+					let g = (num & 0x0000FF) * percent;
+					if (g > 255)
+						g = 255;
+					else if (g < 0)
+						g = 0;
+					// Return new color
+					let newColor = "000000" + (g | (b << 8) | (r << 16)).toString(16);
+					return (usePound ? "#" : "") + newColor.substr(newColor.length - 6);
+				}
+			}
+
+			// Functions modified from https://www.w3schools.com/js/js_cookies.asp
+			class CookieHelper {
+				static setCookie(cname, cvalue, exdays) {
+					const d = new Date();
+					d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+					let expires = "expires=" + d.toUTCString();
+					document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;SameSite=Strict";
+				}
+
+				static getCookie(cname) {
+					let name = cname + "=";
+					let ca = document.cookie.split(";");
+					for (let i = 0; i < ca.length; i++) {
+						let c = ca[i];
+						while (c.charAt(0) === " ") {
+							c = c.substring(1);
+						}
+						if (c.indexOf(name) === 0) {
+							return c.substring(name.length, c.length);
+						}
+					}
+					return "";
+				}
+			}
+			
+			class PseudoRandom {
+				setSeed(seed) {
+					this.seed = (seed ^ 0x5DEECE66D) & ((1 << 48) - 1);
+				}
+
+				next(bits) {
+					this.seed = (this.seed * 0x5DEECE66D + 0xB) & ((1 << 48) - 1);
+					console.log(this.seed);
+					return (this.seed >>> (48 - bits));
+				}
+
+				nextBytes(bytes) {
+					for (let i = 0; i < bytes.length;)
+						for (let rnd = this.next(32), n = Math.min(bytes.length - i, 4); n-- > 0; rnd >>= 8)
+							bytes[i++] = rnd;
+				}
+			}
+
+            // Modified from https://stackoverflow.com/a/4033310
+            function getJsonAsync(theUrl, callback) {
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4 && xhr.status === 200)
+                        callback(xhr.response);
+                }
+                xhr.responseType = "json";
+                xhr.open("GET", theUrl, true); // true for asynchronous 
+                xhr.send();
+            }
+        })();
+		// Exposed functions for UI buttons
+		var actionSetColor, actionSkipTurn;
+    </script>
+</body>
+
+</html>

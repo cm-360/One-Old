@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="resources"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-16">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/gson-2.8.5"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/WebSocket-1.5.2"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/slf4j-api-1.7.32"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
